@@ -1,5 +1,11 @@
 #!/bin/bash
 
+## Checking if the user is sudo. We don't want this script to be run with sudo.
+if [[ $EUID -eq 0 ]]; then
+    echo "\033[31;49;1mThis script should not be run with sudo.\\e[m"
+    exit 1
+fi
+
 # Function to detect the Linux distribution.
 detect_distro() {
     if command -v apt-get &> /dev/null; then
@@ -14,7 +20,7 @@ detect_distro() {
     fi
 
     export distro
-    echo -e "\033[0;36mDetected Linux Distribution: $distro\\e[m"
+    echo -e "\033[0;36mDetected Linux Distribution:\033[0;36m $distro\\e[m"
 }
 
 detect_distro
@@ -42,6 +48,10 @@ install_python
 
 ## Changing to the directory where the file resides.
 cd "$( dirname "${BASH_SOURCE[0]}" )"
+
+## Now it is the time to set one environment variable.
+export username=$(whoami)
+
 
 ## Starting the main script.
 sudo -E python3 .
