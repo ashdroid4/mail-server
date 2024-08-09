@@ -71,19 +71,34 @@ service auth {
     file.write(inside)
 
 # Let's configure SSL 
-echo(f"\n{green}Let's configure SSL with Let's SSL.\n{nocolor}")
+echo(f"\n{green}Let's configure SSL.\n{nocolor}")
 
-## Installing certbot
-installPackage("certbot")
+## Installing OpenSSL
+installPackage("openssl", fullname="OpenSSL")
 
-## Obtain Certificate
-run(f"certbot certonly --standalone -d mail.{domain}")
+## Configuring OpenSSL
+run("mkdir -p /etc/ssl/certs")
+run("mkdir -p /etc/ssl/private")
+
+run("openssl req -new -x509 -days 365 -nodes " +
+    "-out /etc/ssl/certs/dovecot.pem -keyout /etc/ssl/private/dovecot.key")
+
+## Setting appropriate permissions
+run("chmod 644 /etc/ssl/certs/dovecot.pem")
+run("chmod 600 /etc/ssl/private/dovecot.key")
+
+## Configuring Dovecot to Use the SSL Certificate
+echo(f"\n{blue}Now, let's configure Dovecot to use the certificate.{nocolor}")
+
+configuration("ssl", "yes", "/etc/dovecot/conf.d/10-ssl.conf")
+configuration("ssl_cert", "</etc/ssl/certs/dovecot.pem", "/etc/dovecot/conf.d/10-ssl.conf")
+configuration("ssl_key", "</etc/ssl/private/dovecot.key", "/etc/dovecot/conf.d/10-ssl.conf")
 
 ## Configuring postfix to use the certificates.
 echo(f"\n{blue}Now, let's configure Postfix to use the certificate.{nocolor}")
 
-run(f"postconf -e 'smtpd_tls_cert_file=/etc/letsencrypt/live/mail.{domain}/fullchain.pem'")
-run(f"postconf -e 'smtpd_tls_key_file=/etc/letsencrypt/live/mail.{domain}/privkey.pem'")
+run(f"postconf -e 'smtpd_tls_cert_file=/etc/ssl/certs/dovecot.pem'")
+run(f"postconf -e 'smtpd_tls_key_file==/etc/ssl/private/dovecot.key'")
 run("postconf -e 'smtpd_use_tls=yes'")
 
 # Configuring Postfix to enable ports 587 and 465
