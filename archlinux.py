@@ -192,17 +192,12 @@ else:
     print("\nYour email password is the same as your useraccount. " 
     f"To change type 'passwd {username}'")
 
-if not domainUsername == username: #To make the code cleaner
-    run(f"su - {domainUsername}")
-
-out, err = run("cd Maildir")
+out, err = run(f"sudo -u {domainUsername} cd Maildir", capture_output=True)
 if err:
-    run("mkdir Maildir")
-    run("chmod -R 700 Maildir")
-    run(f"chown -R {domainUsername}:{domainUsername} Maildir")
+    run(f"sudo -u {domainUsername} mkdir Maildir")
+    run(f"sudo -u {domainUsername} sudo chmod -R 700 Maildir")
+    run(f"sudo -u {domainUsername} sudo chown -R {domainUsername}:{domainUsername} Maildir")
 
-if not domainUsername == username:
-    run("exit")
 
 # Let's restart and enable all the services
 echo(f"\n{green}STarting your mail server.{nocolor}\n")
