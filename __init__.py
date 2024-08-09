@@ -90,11 +90,11 @@ def installPackage(packagename:str, fullname:str=..., check:bool=False) -> bool:
         out, err =  run(f"pacman -Qi {packagename}", capture_output=True)
         installed = True if out else False
 
-    if linuxDistribution == "Debian/Ubuntu":
+    elif linuxDistribution == "Debian/Ubuntu":
         out, err = run(f"dpkg -l {packagename}", capture_output=True)
         installed = packagename in out
     
-    if linuxDistribution == "Fedora":
+    elif linuxDistribution == "Fedora":
         out, err = run(f"rpm -q {packagename}", capture_output=True)
         installed = True if out else False
     
