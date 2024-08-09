@@ -1,7 +1,7 @@
 """This will setup mail-server in Arch Linux based distributions"""
 
 #--------------------------------- IMPORTS -------------------------------------#
-from __init__ import echo, run, yon, installPackage, postconf, configuration, verifyInput, username, pwd
+from __init__ import echo, run, installPackage, postconf, configuration, verifyInput, username, pwd
 #-------------------------------------------------------------------------------#
 
 #------------------------------- CONSTANTS -------------------------------------#
@@ -43,7 +43,10 @@ installPackage("dovecot", fullname="Dovecot")
 ## Let's configure Dovecot
 echo(f"{green}\nConfiguring Dovecot to listen to emails.{nocolor}\n")
 
-run("cp -r -f /usr/share/doc/dovecot/example-config/* /etc/dovecot/")
+out, err = run("ls /etc/dovecot/dovecot.conf")
+
+if err:
+    run("cp -r -f /usr/share/doc/dovecot/example-config/* /etc/dovecot/")
 
 configuration("listen", "*", "/etc/dovecot/dovecot.conf")
 
@@ -64,7 +67,8 @@ service auth {
 }
     """
     inside = file.read()
-    if conf not in inside: inside.append()
+    if conf not in inside: inside += conf
+    file.write(inside)
 
 # Let's configure SSL 
 echo(f"\n{green}Let's configure SSL with Let's SSL.\n{nocolor}")
@@ -99,7 +103,8 @@ smtps inet n - y - - smtpd
 """
 
     inside = file.read()
-    if conf not in inside: inside.append(conf)
+    if conf not in inside: inside += conf
+    file.write(inside)
 
 # Setting up DKIM
 echo(f"\n{green}Setting up DKIM\n{nocolor}")
