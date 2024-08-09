@@ -160,7 +160,7 @@ with open("/etc/opendkim/SigningTable", "w+") as file:
 f"*@{domain} default._domainkey.{domain}"
     )
 
-with open("etc/opendkim/TrustedHosts", "w+") as file:
+with open("/etc/opendkim/TrustedHosts", "w+") as file:
     file.write(f"""
 127.0.0.1
 localhost
