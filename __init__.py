@@ -2,12 +2,14 @@
 This is init file for mail-server"""
 
 #--------------------------------- IMPORTS -------------------------------------#
-from os import system
+from sys import exit
+from os import system, getenv
 from subprocess import run as foo
 #-------------------------------------------------------------------------------#
 
 #------------------------------- CONSTANTS -------------------------------------#
 username = getenv("username")
+linuxDistribution = getenv("distro")
 green = "\033[0;32m"; red = "\033[31;49;1m"; blue = "\033[0;36m"; nocolor = "\\e[m"
 #-------------------------------------------------------------------------------#
 
@@ -16,7 +18,7 @@ green = "\033[0;32m"; red = "\033[31;49;1m"; blue = "\033[0;36m"; nocolor = "\\e
 def echo(arg: str):
     system(f'echo -e "{arg}"')
 
-def yon(arg:str, assume=True, simple=True, default=False) -> bool:
+def yon(arg:str, assume:bool=True, simple:bool=True, default:bool=False) -> bool:
     response = (input(arg)).lower()
 
     if default and response == "": return True
@@ -81,4 +83,71 @@ def run(
         if not proceed: 
             print("Okay, aborted!")
             exit()
+
+def installPackage(packagename:str, fullname:str=..., check:bool=False) -> bool:
+    if linuxDistribution == "Arch Linux":
+        out, err =  run(f"pacman -Qi {packagename}", capture_output=True)
+        installed = True if out else False
+
+    if linuxDistribution == "Debian/Ubuntu":
+        out, err = run(f"dpkg -l {packagename}", capture_output=True)
+        installed = packagename in out
+    
+    if linuxDistribution == "Fedora":
+        out, err = run(f"rpm -q {packagename}", capture_output=True)
+        installed = True if out else False
+    
+    else: print("Something's fucked")
+    
+    if check: return installed
+
+    if installed: return
+
+    if fullname: name = fullname
+    else: name = packagename
+
+    echo(f"\n{green}Installing {name}{nocolor}")
+
+    if linuxDistribution == "Arch Linux":
+        run(f"pacman -S {packagename}")
+    if linuxDistribution == "Debian/Ubuntu":
+        run(f"apt-get install {packagename}")
+    if linuxDistribution == "Fedora":
+        run(f"dnf install {packagename}")
+
+
+def verifyInput(i:str, keyword:str=...) -> str:
+    while True:
+        value = input(i)
+        if yon(f"Is {value} correct{keyword}?"):
+            break
+    return value
+
+def postconf(arg:str):
+    run(f"postconf -e '{arg}'")
+
+def configuration(key:str, value:str, path:str, equal:bool=True):
+    with open(path, 'r') as file:
+        lines = file.readlines()
+    
+    found = False
+    equal = "=" if equal else ""
+
+    for i, line in enumerate(lines):
+        line = line.strip()
+        if line.startswith(key) and not line.startswith("#"):
+            lines[i] = f"{key} {equal} {value}\n"
+            found = True
+            break
+    
+    if not found:
+        lines.append(f"{key} {equal} {value}\n")
+    
+    with open(path, 'w') as file:
+        file.writelines(lines)
+    
+    if found:
+        print(f"Updated: {key} {equal} {value} in {path}")
+    else:
+        print(f"Added: {key} {equal} {value} to {path}")
 #-------------------------------------------------------------------------------#
