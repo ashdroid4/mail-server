@@ -55,7 +55,7 @@ def yon(arg:str, assume:bool=True, simple:bool=True, default:bool=False) -> bool
 def run(
     arg:str, 
     no_sudo:bool=False, 
-    possible_warning:str=..., 
+    possible_warning:str="", 
     capture_output:bool=False
     ) -> [str, str]: #NOTES: MAKE A REPEAT OPTION
 

@@ -99,7 +99,7 @@ if not Path("/etc/ssl/certs/dovecot.pem").exists():
     echo(f"\n{blue}Now, let's configure Postfix to use the certificate.{nocolor}")
 
     run(f"postconf -e 'smtpd_tls_cert_file=/etc/ssl/certs/dovecot.pem'")
-    run(f"postconf -e 'smtpd_tls_key_file==/etc/ssl/private/dovecot.key'")
+    run(f"postconf -e 'smtpd_tls_key_file=/etc/ssl/private/dovecot.key'")
     run("postconf -e 'smtpd_use_tls=yes'")
 
 # Configuring Postfix to enable ports 587 and 465
