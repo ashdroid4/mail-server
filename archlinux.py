@@ -132,7 +132,7 @@ openDKIMConf = {
 }
 
 for key in openDKIMConf:
-    configuration(key, openDKIMConf[key], "/etc/opendkim.conf" equal="    ")
+    configuration(key, openDKIMConf[key], "/etc/opendkim.conf", equal="    ")
 
 ## Generating Keys
 echo("Generating DKIM keys.")
