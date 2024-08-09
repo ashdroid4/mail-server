@@ -127,12 +127,11 @@ def verifyInput(i:str, keyword:str="") -> str:
 def postconf(arg:str):
     run(f"postconf -e '{arg}'")
 
-def configuration(key:str, value:str, path:str, equal:bool=True):
+def configuration(key:str, value:str, path:str, equal:str="="):
     with open(path, 'r') as file:
         lines = file.readlines()
     
     found = False
-    equal = "=" if equal else ""
 
     for i, line in enumerate(lines):
         line = line.strip()
