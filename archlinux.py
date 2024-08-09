@@ -143,24 +143,24 @@ for key in openDKIMConf:
 echo("Generating DKIM keys.")
 
 run(f"mkdir -p /etc/opendkim/keys/{domain}")
-run(f"opendkim-genkey -s default -d yourdomain.com -D /etc/opendkim/keys/{domain}")
+run(f"opendkim-genkey -s default -d {domain} -D /etc/opendkim/keys/{domain}")
 run("chown -R opendkim:opendkim /etc/opendkim/keys")
 run(f"chmod go-rw /etc/opendkim/keys/{domain}/default.private")
 
 ## Configuring Tables
 echo("Configuring DKIM Tables.")
 
-with open("/etc/opendkim/KeyTable", "w") as file:
+with open("/etc/opendkim/KeyTable", "w+") as file:
     file.write(
 f"default._domainkey.{domain} {domain}:default:/etc/opendkim/keys/{domain}/default.private"
     )
 
-with open("/etc/opendkim/SigningTable", "w") as file:
+with open("/etc/opendkim/SigningTable", "w+") as file:
     file.write(
 f"*@{domain} default._domainkey.{domain}"
     )
 
-with open("etc/opendkim/TrustedHosts", "w") as file:
+with open("etc/opendkim/TrustedHosts", "w+") as file:
     file.write(f"""
 127.0.0.1
 localhost
