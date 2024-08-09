@@ -117,7 +117,7 @@ def installPackage(packagename:str, fullname:str=..., check:bool=False) -> bool:
         run(f"dnf install {packagename}")
 
 
-def verifyInput(i:str, keyword:str=...) -> str:
+def verifyInput(i:str, keyword:str="") -> str:
     while True:
         value = input(i)
         if yon(f"Is {value} correct {keyword}?"):
