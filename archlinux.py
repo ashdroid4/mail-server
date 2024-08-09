@@ -131,8 +131,13 @@ openDKIMConf = {
     "Socket": "inet:12301@localhost",
 }
 
+out, err = run("ls /etc/opendkim/opendkim.conf", capture_output=True)
+
+if err:
+    run("cp -f /usr/share/doc/opendkim/opendkim.conf.sample /etc/opendkim/opendkim.conf")
+
 for key in openDKIMConf:
-    configuration(key, openDKIMConf[key], "/etc/opendkim.conf", equal="    ")
+    configuration(key, openDKIMConf[key], "/etc/opendkim/opendkim.conf", equal="    ")
 
 ## Generating Keys
 echo("Generating DKIM keys.")
