@@ -215,13 +215,13 @@ if err:
 
 
 # Let's restart and enable all the services
-echo(f"\n{green}STarting your mail server.{nocolor}\n")
+echo(f"\n{green}Starting your mail server.{nocolor}\n")
 run("systemctl enable postfix")
 run("systemctl enable dovecot")
 run("systemctl enable opendkim")
-run("systemctl start postfix")
-run("systemctl start dovecot")
-run("systemctl start opendkim")
+run("systemctl restart postfix")
+run("systemctl restart dovecot")
+run("systemctl restart opendkim")
 
 echo(f"""\n\n
 Setup the DNS records:
