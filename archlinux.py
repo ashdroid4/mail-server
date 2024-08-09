@@ -194,7 +194,7 @@ else:
 
 out, err = run(f"sudo -u {domainUsername} cd Maildir", capture_output=True)
 if err:
-    run(f"sudo -u {domainUsername} mkdir Maildir")
+    run(f"sudo -u {domainUsername} sudo mkdir Maildir")
     run(f"sudo -u {domainUsername} sudo chmod -R 700 Maildir")
     run(f"sudo -u {domainUsername} sudo chown -R {domainUsername}:{domainUsername} Maildir")
 
@@ -232,4 +232,6 @@ Setup the DNS records:
     Content -> mail.{domain}
     Priority -> 10
     """)
+
+start = True
 #------------------------------ Script End ----------------------------#

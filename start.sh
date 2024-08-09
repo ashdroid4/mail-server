@@ -30,13 +30,13 @@ install_python() {
     case "$distro" in
         "Debian/Ubuntu")
             sudo apt-get update
-            sudo apt-get install -y python3
+            sudo apt-get install python3
             ;;
         "Fedora")
-            sudo dnf install -y python3
+            sudo dnf install python3
             ;;
         "Arch Linux")
-            sudo pacman -Sy --noconfirm python
+            sudo pacman -Sy python
             ;;
         *)
     esac
