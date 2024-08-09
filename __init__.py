@@ -4,6 +4,7 @@ This is init file for mail-server"""
 #--------------------------------- IMPORTS -------------------------------------#
 import pwd
 from sys import exit
+from pathlib import Path
 from os import system, getenv
 from subprocess import run as foo
 #-------------------------------------------------------------------------------#
@@ -11,6 +12,7 @@ from subprocess import run as foo
 #------------------------------- CONSTANTS -------------------------------------#
 username = getenv("username")
 linuxDistribution = getenv("distro")
+cwd = (Path(__file__).parent).absolute()
 green = "\033[0;32m"; red = "\033[31;49;1m"; blue = "\033[0;36m"; nocolor = "\\e[m"
 #-------------------------------------------------------------------------------#
 
