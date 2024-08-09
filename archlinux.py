@@ -43,7 +43,7 @@ installPackage("dovecot", fullname="Dovecot")
 ## Let's configure Dovecot
 echo(f"{green}\nConfiguring Dovecot to listen to emails.{nocolor}\n")
 
-out, err = run("ls /etc/dovecot/dovecot.conf")
+out, err = run("ls /etc/dovecot/dovecot.conf", capture_output=True)
 
 if err:
     run("cp -r -f /usr/share/doc/dovecot/example-config/* /etc/dovecot/")
