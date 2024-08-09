@@ -2,6 +2,7 @@
 This is init file for mail-server"""
 
 #--------------------------------- IMPORTS -------------------------------------#
+import pwd
 from sys import exit
 from os import system, getenv
 from subprocess import run as foo
@@ -119,7 +120,7 @@ def installPackage(packagename:str, fullname:str=..., check:bool=False) -> bool:
 def verifyInput(i:str, keyword:str=...) -> str:
     while True:
         value = input(i)
-        if yon(f"Is {value} correct{keyword}?"):
+        if yon(f"Is {value} correct {keyword}?"):
             break
     return value
 
@@ -135,7 +136,7 @@ def configuration(key:str, value:str, path:str, equal:bool=True):
 
     for i, line in enumerate(lines):
         line = line.strip()
-        if line.startswith(key) and not line.startswith("#"):
+        if line.startswith(key) and not value in line:
             lines[i] = f"{key} {equal} {value}\n"
             found = True
             break

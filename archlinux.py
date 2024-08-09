@@ -1,8 +1,7 @@
 """This will setup mail-server in Arch Linux based distributions"""
 
 #--------------------------------- IMPORTS -------------------------------------#
-from __init__ import echo, run, yon, installPackage, postconf, configuration, verifyInput
-
+from __init__ import echo, run, yon, installPackage, postconf, configuration, verifyInput, username, pwd
 #-------------------------------------------------------------------------------#
 
 #------------------------------- CONSTANTS -------------------------------------#
@@ -35,12 +34,13 @@ postconf(f"myorigin = $mydomain")
 postconf(f"inet_interfaces = all")
 postconf(f"mydestination = $myhostname, localhost.$mydomain, localhost")
 
-#sudo grep -q '^Socket' /etc/opendkim.conf || echo 'Socket = inet:12301@localhost' | sudo tee -a /etc/opendkim.conf
+# Let's setup dovecote to listen to emails.
+echo(f"\n{green}Setting up Dovecot to listen to emails.{nocolor}\n")
 
-# Let's install Dovcot
+## Let's install Dovcot
 installPackage("dovecot", fullname="Dovecot")
 
-# Let's configure Dovecot
+## Let's configure Dovecot
 echo(f"{green}\nConfiguring Dovecot to listen to emails.{nocolor}\n")
 
 run("cp -r -f /usr/share/doc/dovecot/example-config/* /etc/dovecot/")
@@ -54,9 +54,7 @@ configuration("!include", "auth-system.conf.ext", "/etc/dovecot/conf.d/10-auth.c
 configuration("mail_location", "maildir:~/Maildir", "/etc/dovecot/conf.d/10-mail.conf")
 
 with open("/etc/dovecot/conf.d/10-master.conf", "r+") as file:
-    inside = file.read()
-    inside.append(
-        """
+    conf = """
 service auth {
   unix_listener /var/spool/postfix/private/auth {
     mode = 0666
@@ -64,15 +62,169 @@ service auth {
     group = postfix
   }
 }
-        """
-    )
+    """
+    inside = file.read()
+    if conf not in inside: inside.append()
 
 # Let's configure SSL 
 echo(f"\n{green}Let's configure SSL with Let's SSL.\n{nocolor}")
+
 ## Installing certbot
 installPackage("certbot")
 
+## Obtain Certificate
 run(f"certbot certonly --standalone -d mail.{domain}")
 
+## Configuring postfix to use the certificates.
+echo(f"\n{blue}Now, let's configure Postfix to use the certificate.{nocolor}")
 
+run(f"postconf -e 'smtpd_tls_cert_file=/etc/letsencrypt/live/mail.{domain}/fullchain.pem'")
+run(f"postconf -e 'smtpd_tls_key_file=/etc/letsencrypt/live/mail.{domain}/privkey.pem'")
+run("postconf -e 'smtpd_use_tls=yes'")
+
+# Configuring Postfix to enable ports 587 and 465
+echo(f"\n{blue}Configuring Postfix to enable ports 587 and 465.{nocolor}\n")
+
+with open("/etc/postfix/master.cf", "r+") as file:
+    conf = """
+submission inet n - y - - smtpd
+  -o syslog_name=postfix/submission
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_sasl_auth_enable=yes
+
+smtps inet n - y - - smtpd
+  -o syslog_name=postfix/smtps
+  -o smtpd_tls_wrappermode=yes
+  -o smtpd_sasl_auth_enable=yes
+"""
+
+    inside = file.read()
+    if conf not in inside: inside.append(conf)
+
+# Setting up DKIM
+echo(f"\n{green}Setting up DKIM\n{nocolor}")
+
+## Installing OpenDKIM
+installPackage("opendkim", fullname="OpenDKIM")
+
+## Configuring OpenDKIM
+openDKIMConf = {
+    "AutoRestart": "Yes",
+    "AutoRestartRate": "10/1h",
+    "Syslog": "Yes",
+    "SyslogSuccess": "Yes",
+    "LogWhy": "Yes",
+    "Canonicalization ": "relaxed/simple",
+    "ExternalIgnoreList": "refile:/etc/opendkim/TrustedHosts",
+    "InternalHosts": "refile:/etc/opendkim/TrustedHosts",
+    "KeyTable": "refile:/etc/opendkim/KeyTable",
+    "SigningTable": "refile:/etc/opendkim/SigningTable",
+    "Mode": "sv",
+    "PidFile": "/var/run/opendkim/opendkim.pid",
+    "SignatureAlgorithm": "rsa-sha256",
+    "UserID": "opendkim:opendkim",
+    "Socket": "inet:12301@localhost",
+}
+
+for key in openDKIMConf:
+    configuration(key, openDKIMConf[key], equal="    ")
+
+## Generating Keys
+echo("Generating DKIM keys.")
+
+run(f"mkdir -p /etc/opendkim/keys/{domain}")
+run(f"opendkim-genkey -s default -d yourdomain.com -D /etc/opendkim/keys/{domain}")
+run("chown -R opendkim:opendkim /etc/opendkim/keys")
+run(f"chmod go-rw /etc/opendkim/keys/{domain}/default.private")
+
+## Configuring Tables
+echo("Configuring DKIM Tables.")
+
+with open("/etc/opendkim/KeyTable", "w") as file:
+    file.write(
+f"default._domainkey.{domain} {domain}:default:/etc/opendkim/keys/{domain}/default.private"
+    )
+
+with open("/etc/opendkim/SigningTable", "w") as file:
+    file.write(
+f"*@{domain} default._domainkey.{domain}"
+    )
+
+with open("etc/opendkim/TrustedHosts", "w") as file:
+    file.write(f"""
+127.0.0.1
+localhost
+{domain}
+    """)
+
+## Configuring Postfix to use OpenDKIM
+echo(f"{blue}Configuring Postfix to use OpenDKIM\n{nocolor}")
+
+run("postconf -e 'milter_default_action = accept'")
+run("postconf -e 'milter_protocol = 6'")
+run("postconf -e 'smtpd_milters = inet:localhost:12301'")
+run("postconf -e 'non_smtpd_milters = inet:localhost:12301'")
+
+# Let's configure the MailBox
+print(f"\nTell the username you want to use for the email. For example: username@{domain}")
+
+domainUsername = verifyInput("Username: ")
+if not domainUsername == username:
+    try:
+        pwd.getpwnam(domainUsername)
+        print("Okay got it!")
+    except KeyError:
+        run(f"useradd -m {domainUsername}")
+        print("\nYOU WILL BE PROMPTED WITH PASSWORD FOR YOUR EMAIL.")
+        run(f"passwd {domainUsername}")
+        print(f"\nIf you want to change the password then type 'passwd {domainUsername}'")
+else:
+    print("\nYour email password is the same as your useraccount. " 
+    f"To change type 'passwd {username}'")
+
+if not domainUsername == username: #To make the code cleaner
+    run(f"su - {domainUsername}")
+
+out, err = run("cd Maildir")
+if err:
+    run("mkdir Maildir")
+    run("chmod -R 700 Maildir")
+    run(f"chown -R {domainUsername}:{domainUsername} Maildir")
+
+if not domainUsername == username:
+    run("exit")
+
+# Let's restart and enable all the services
+echo(f"\n{green}STarting your mail server.{nocolor}\n")
+run("systemctl enable postfix")
+run("systemctl enable dovecot")
+run("systemctl enable opendkim")
+run("systemctl start postfix")
+run("systemctl start dovecot")
+run("systemctl start opendkim")
+
+echo(f"""\n\n
+Setup the DNS records:
+
+1. SPF RECORD:
+    Type -> TXT
+    Name -> @
+    Content -> v=spf1 mx ~all 
+
+2. DKIM RECORD:
+    Type -> TXT
+    Name -> default._domainkey
+    Content -> get it from /etc/opendkim/keys/{domain}/default.txt
+
+3. DMARC RECORD
+    Type -> TXT
+    Name -> _dmarc
+    Content -> "v=DMARC1; p=none; rua=mailto:postmaster@{domain}"
+
+4. MX RECORD
+    Type -> MX
+    Name -> @
+    Content -> mail.{domain}
+    Priority -> 10
+    """)
 #------------------------------ Script End ----------------------------#
