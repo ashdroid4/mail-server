@@ -22,7 +22,6 @@ installPackage("dovecot-imapd")
 installPackage("dovecot-pop3d")
 installPackage("opendkim", fullname="OpenDKIM")
 installPackage("opendkim-tools")
-installPackage("systemctl")
 installPackage("openssl", fullname="OpenSSL")
 
 # Getting to know you.
@@ -220,12 +219,12 @@ run("postconf -e 'non_smtpd_milters = inet:localhost:12301'")
 
 # Let's restart and enable all the services
 echo(f"\n{green}Starting your mail server.{nocolor}\n")
-run("systemctl enable postfix")
-run("systemctl enable dovecot")
-run("systemctl enable opendkim")
-run("systemctl restart postfix")
-run("systemctl restart dovecot")
-run("systemctl restart opendkim")
+run("service postfix restart")
+run("service dovecot restart")
+run("service opendkim restart")
+run("update-rc.d postfix defaults")
+run("update-rc.d dovecot defaults")
+run("update-rc.d opendkim defaults")
 
 echo(f"""\n\n
 Setup the DNS records:
