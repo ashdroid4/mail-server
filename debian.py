@@ -48,8 +48,7 @@ else:
     print(f"\nYour email password is the same as your useraccount {username} " 
     f"To change type 'passwd {username}'")
 
-out, err = run(f"sudo -u {domainUsername} cd Maildir", capture_output=True)
-if err:
+if not Path(f"/home/{domainUsername}/Maildir").exists():
     run(f"mkdir /home/{domainUsername}/Maildir")
     run(f"chmod -R 700 /home/{domainUsername}/Maildir")
     run(f"sudo chown -R {domainUsername}:{domainUsername} /home/{domainUsername}/Maildir")
@@ -60,7 +59,7 @@ postconf(f"mydomain = {domain}")
 postconf(f"myorigin = $mydomain")
 postconf(f"inet_interfaces = all")
 postconf(f"mydestination = $myhostname, localhost.$mydomain, localhost")
-postconf(f"home_mailbox = Maildir/")
+postconf(f"home_mailbox = /home/{domainUsername}Maildir/")
 
 # Let's setup dovecote to listen to emails.
 echo(f"\n{green}Setting up Dovecot to listen to emails.{nocolor}\n")
@@ -76,7 +75,7 @@ configuration("!include", "auth-system.conf.ext", "/etc/dovecot/conf.d/10-auth.c
 configuration("passdb", "{driver = pam}", "/etc/dovecot/conf.d/10-auth.conf", equal=" ")
 configuration("userdb", "{driver = passwd}", "/etc/dovecot/conf.d/10-auth.conf", equal=" ")
 
-configuration("mail_location", "maildir:~/Maildir", "/etc/dovecot/conf.d/10-mail.conf")
+configuration("mail_location", f"maildir:/home/{domainUsername}/Maildir", "/etc/dovecot/conf.d/10-mail.conf")
 
 with open("/etc/dovecot/conf.d/10-master.conf", "r+") as file:
     conf = """
@@ -173,10 +172,8 @@ openDKIMConf = {
     "Socket": "inet:12301@localhost",
 }
 
-out, err = run("ls /etc/opendkim/opendkim.conf", capture_output=True)
-
-if err:
-    run("cp -f /usr/share/doc/opendkim/opendkim.conf.sample /etc/opendkim/opendkim.conf")
+if not Path("/etc/opendkim.conf").exists():
+    run("cp -f /usr/share/doc/opendkim/opendkim.conf.sample /etc/opendkim.conf")
 
 for key in openDKIMConf:
     configuration(key, openDKIMConf[key], "/etc/opendkim/opendkim.conf", equal="    ")
