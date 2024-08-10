@@ -240,22 +240,27 @@ run("systemctl restart opendkim")
 echo(f"""\n\n
 Setup the DNS records:
 
-1. SPF RECORD:
+1. A RECORD
+    Type -> A
+    Name -> mail.{domain}
+    Content -> Your IP address
+
+2. SPF RECORD:
     Type -> TXT
     Name -> @
     Content -> v=spf1 mx ~all 
 
-2. DKIM RECORD:
+3. DKIM RECORD:
     Type -> TXT
     Name -> default._domainkey
     Content -> get it from /etc/opendkim/keys/{domain}/default.txt
 
-3. DMARC RECORD
+4. DMARC RECORD
     Type -> TXT
     Name -> _dmarc
     Content -> "v=DMARC1; p=none; rua=mailto:postmaster@{domain}"
 
-4. MX RECORD
+5. MX RECORD
     Type -> MX
     Name -> @
     Content -> mail.{domain}
