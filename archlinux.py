@@ -18,21 +18,46 @@ green = "\033[0;32m"; red = "\033[31;49;1m"; blue = "\033[0;36m"; nocolor = "\\e
 echo(f"{green}Upgrading system...{nocolor}")
 run("pacman -Syu")
 
-# Let's install Postfix.
-installPackage("postfix", fullname="Postfix")
-
-# Let's configure Postfix.
-echo(f"\n{blue}You will be asked some important Postfix configurations next.\n{nocolor}")
-
+# Getting to know you.
 echo("Type your domain name. For example: domain.com\n")
 
 domain = verifyInput("Enter your domain: ")
 
+# Let's configure the MailBox
+print(f"\nTell the username you want to use for the email. For example: username@{domain}")
+
+domainUsername = verifyInput("Username: ")
+if not domainUsername == username:
+    try:
+        pwd.getpwnam(domainUsername)
+        print("Okay got it!")
+        print(f"Your email password is the same as your useraccount {domainUsername} "
+        f"To change type 'passwd {username}')
+    except KeyError:
+        run(f"useradd -m /bin/false {domainUsername}")
+        print("\nYOU WILL BE PROMPTED WITH PASSWORD FOR YOUR EMAIL.")
+        run(f"passwd {domainUsername}")
+        print(f"\nIf you want to change the password then type 'passwd {domainUsername}'")
+else:
+    print(f"\nYour email password is the same as your useraccount {username} " 
+    f"To change type 'passwd {username}'")
+
+out, err = run(f"sudo -u {domainUsername} cd Maildir", capture_output=True)
+if err:
+    run(f"mkdir /home/{domainUsername}/Maildir")
+    run(f"chmod -R 700 /home/{domainUsername}/Maildir")
+    run(f"sudo chown -R {domainUsername}:{domainUsername} /home/{domainUsername}/Maildir")
+
+# Let's install Postfix.
+installPackage("postfix", fullname="Postfix")
+
+# Let's configure Postfix.
 postconf(f"myhostname = mail.{domain}")
 postconf(f"mydomain = {domain}")
 postconf(f"myorigin = $mydomain")
 postconf(f"inet_interfaces = all")
 postconf(f"mydestination = $myhostname, localhost.$mydomain, localhost")
+postconf(f"home_mailbox = Maildir/")
 
 # Let's setup dovecote to listen to emails.
 echo(f"\n{green}Setting up Dovecot to listen to emails.{nocolor}\n")
@@ -52,7 +77,9 @@ configuration("listen", "*", "/etc/dovecot/dovecot.conf")
 
 configuration("disable_plaintext_auth", "yes", "/etc/dovecot/conf.d/10-auth.conf")
 configuration("auth_mechanisms", "plain login", "/etc/dovecot/conf.d/10-auth.conf")
-configuration("!include", "auth-system.conf.ext", "/etc/dovecot/conf.d/10-auth.conf", equal=False)
+configuration("!include", "auth-system.conf.ext", "/etc/dovecot/conf.d/10-auth.conf", equal=" ")
+configuration("passdb", "{driver = pam}", "/etc/dovecot/conf.d/10-auth.conf", equal=" ")
+configuration("userdb", "{driver = passwd}", "/etc/dovecot/conf.d/10-auth.conf", equal=" ")
 
 configuration("mail_location", "maildir:~/Maildir", "/etc/dovecot/conf.d/10-mail.conf")
 
@@ -69,6 +96,17 @@ service auth {
     inside = file.read()
     if conf not in inside: inside += conf
     file.write(inside)
+
+## Configuring Postfix to use Dovecot for SASL Authentication
+postconf("smtpd_sasl_type = dovecot")
+postconf("smtpd_sasl_path = private/auth")
+postconf("smtpd_sasl_auth_enable = yes")
+postconf("smtpd_tls_auth_only = yes")
+postconf("smtpd_recipient_restrictions = "
+         "permit_sasl_authenticated, "
+         "permit_mynetworks, "
+         "reject_unauth_destination")
+postconf("smtpd_sasl_security_options = noanonymous")
 
 # Let's configure SSL 
 if not Path("/etc/ssl/certs/dovecot.pem").exists():
@@ -189,30 +227,6 @@ run("postconf -e 'milter_default_action = accept'")
 run("postconf -e 'milter_protocol = 6'")
 run("postconf -e 'smtpd_milters = inet:localhost:12301'")
 run("postconf -e 'non_smtpd_milters = inet:localhost:12301'")
-
-# Let's configure the MailBox
-print(f"\nTell the username you want to use for the email. For example: username@{domain}")
-
-domainUsername = verifyInput("Username: ")
-if not domainUsername == username:
-    try:
-        pwd.getpwnam(domainUsername)
-        print("Okay got it!")
-    except KeyError:
-        run(f"useradd -m {domainUsername}")
-        print("\nYOU WILL BE PROMPTED WITH PASSWORD FOR YOUR EMAIL.")
-        run(f"passwd {domainUsername}")
-        print(f"\nIf you want to change the password then type 'passwd {domainUsername}'")
-else:
-    print("\nYour email password is the same as your useraccount. " 
-    f"To change type 'passwd {username}'")
-
-out, err = run(f"sudo -u {domainUsername} cd Maildir", capture_output=True)
-if err:
-    run(f"sudo -u {domainUsername} sudo mkdir Maildir")
-    run(f"sudo -u {domainUsername} sudo chmod -R 700 Maildir")
-    run(f"sudo -u {domainUsername} sudo chown -R {domainUsername}:{domainUsername} Maildir")
-
 
 # Let's restart and enable all the services
 echo(f"\n{green}Starting your mail server.{nocolor}\n")
