@@ -39,7 +39,7 @@ if not domainUsername == username:
         pwd.getpwnam(domainUsername)
         print("Okay got it!")
         print(f"Your email password is the same as your useraccount {domainUsername} "
-        f"To change type 'passwd {username}')
+        f"To change type 'passwd {username}'")
     except KeyError:
         run(f"useradd -m /bin/false {domainUsername}")
         print("\nYOU WILL BE PROMPTED WITH PASSWORD FOR YOUR EMAIL.")
@@ -68,11 +68,6 @@ echo(f"\n{green}Setting up Dovecot to listen to emails.{nocolor}\n")
 
 ## Let's configure Dovecot
 echo(f"{green}\nConfiguring Dovecot to listen to emails.{nocolor}\n")
-
-out, err = run("ls /etc/dovecot/dovecot.conf", capture_output=True)
-
-if err:
-    run("cp -r -f /usr/share/doc/dovecot/example-config/* /etc/dovecot/")
 
 configuration("listen", "*", "/etc/dovecot/dovecot.conf")
 
