@@ -32,7 +32,7 @@ if not domainUsername == username:
         pwd.getpwnam(domainUsername)
         print("Okay got it!")
         print(f"Your email password is the same as your useraccount {domainUsername} "
-        f"To change type 'passwd {username}')
+        f"To change type 'passwd {username}'")
     except KeyError:
         run(f"useradd -m /bin/false {domainUsername}")
         print("\nYOU WILL BE PROMPTED WITH PASSWORD FOR YOUR EMAIL.")
