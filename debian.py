@@ -176,7 +176,7 @@ if not Path("/etc/opendkim.conf").exists():
     run("cp -f /usr/share/doc/opendkim/opendkim.conf.sample /etc/opendkim.conf")
 
 for key in openDKIMConf:
-    configuration(key, openDKIMConf[key], "/etc/opendkim/opendkim.conf", equal="    ")
+    configuration(key, openDKIMConf[key], "/etc/opendkim.conf", equal="    ")
 
 ## Generating Keys
 echo("Generating DKIM keys.")
