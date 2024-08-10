@@ -182,9 +182,7 @@ openDKIMConf = {
     "Socket": "inet:12301@localhost",
 }
 
-out, err = run("ls /etc/opendkim/opendkim.conf", capture_output=True)
-
-if err:
+if not Path("/etc/opendkim/opendkim.conf").exists():
     run("cp -f /usr/share/doc/opendkim/opendkim.conf.sample /etc/opendkim/opendkim.conf")
 
 for key in openDKIMConf:
