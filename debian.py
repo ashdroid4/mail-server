@@ -40,7 +40,7 @@ if not domainUsername == username:
         print(f"Your email password is the same as your useraccount {domainUsername} "
         f"To change type 'passwd {username}'")
     except KeyError:
-        run(f"useradd -m /bin/false {domainUsername}")
+        run(f"useradd -m -s /bin/false {domainUsername}")
         print("\nYOU WILL BE PROMPTED WITH PASSWORD FOR YOUR EMAIL.")
         run(f"passwd {domainUsername}")
         print(f"\nIf you want to change the password then type 'passwd {domainUsername}'")
