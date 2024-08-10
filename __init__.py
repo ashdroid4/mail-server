@@ -19,7 +19,7 @@ green = "\033[0;32m"; red = "\033[31;49;1m"; blue = "\033[0;36m"; nocolor = "\\e
 
 #------------------------------- Functions -------------------------------------#
 def echo(arg: str):
-    system(f'echo -e "{arg}"')
+    system(f'echo "{arg}"')
 
 def yon(arg:str, assume:bool=True, simple:bool=True, default:bool=False) -> bool:
     response = (input(arg)).lower()
