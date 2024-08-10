@@ -41,9 +41,7 @@ if not domainUsername == username:
 else:
     print(f"\nYour email password is the same as your useraccount {username} " 
     f"To change type 'passwd {username}'")
-
-out, err = run(f"sudo -u {domainUsername} cd Maildir", capture_output=True)
-if err:
+if not Path(f"/home/{domainUsername}/Maildir").exists():
     run(f"mkdir /home/{domainUsername}/Maildir")
     run(f"chmod -R 700 /home/{domainUsername}/Maildir")
     run(f"sudo chown -R {domainUsername}:{domainUsername} /home/{domainUsername}/Maildir")
